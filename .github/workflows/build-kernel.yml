@@ -1,4 +1,4 @@
-name: Build android_gki_kernel
+name: Android_gki_kernel_build
 
 
 on:
