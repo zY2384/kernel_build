@@ -21,7 +21,7 @@ jobs:
         run: |
           mkdir android-kernel && cd android-kernel
           curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod +x ./repo
-          ./repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10-2023-04
+          ./repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10-2022-01
           ./repo sync -c -j$(($(getconf _NPROCESSORS_ONLN) * 2))
           echo "检查代码完整性"
           ./repo sync && ls
@@ -31,7 +31,7 @@ jobs:
           echo "开始构建内核" 
           cd android-kernel && ls
           if [[ -f build/build.sh ]];then
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(($(getconf _NPROCESSORS_ONLN) * 2))
+            BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(($(getconf _NPROCESSORS_ONLN) * 2))
           fi
           
       - name: Package kernel
@@ -55,5 +55,5 @@ jobs:
       - name: Upload kernel to artifact
         uses: actions/upload-artifact@v3
         with:
-          name: gki-android12-5.10-2023-04
+          name: gki-android12-5.10-test
           path: AnyKernel3/*
