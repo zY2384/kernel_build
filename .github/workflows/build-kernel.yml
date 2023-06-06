@@ -49,5 +49,5 @@ jobs:
       - name: Upload kernel to artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ env.KERNEL_VERSION }}_${{ env.KERNEL_TARGET }}
+          name: gki-android12-5.10-2023-04
           path: AnyKernel3/*
