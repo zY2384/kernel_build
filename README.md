@@ -20,4 +20,4 @@ Meow!
 
 3. Click `Run workflow` in `Action->Build MikaKernel`
 
-## Warning: 他妈的先Fork再修改！再开PR我骂人了！
+## Warning: 该fork本人已修改不通用勿fork
