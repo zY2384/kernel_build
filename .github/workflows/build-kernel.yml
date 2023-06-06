@@ -1,4 +1,4 @@
-name: Build MikaKernel
+name: Build android_gki_kernel
 
 
 on:
