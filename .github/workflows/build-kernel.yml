@@ -20,7 +20,7 @@ jobs:
       - name: Pull toolchain and kernel
         run: |
           mkdir android-kernel && cd android-kernel
-          curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod ./repo
+          curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod +x ./repo
           ./repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10-2023-04
           ./repo sync -c -j$(($(getconf _NPROCESSORS_ONLN) * 2))
           echo "检查代码完整性"
