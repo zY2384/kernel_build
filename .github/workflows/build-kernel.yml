@@ -27,7 +27,7 @@ jobs:
           ./repo sync && ls
           echo "5.10.168更换为5.10.66"
           rm -rf common
-          git clone --depth=1 git clone https://github.com/aosp-mirror/kernel_common -b deprecated/android12-5.10-2022-01 --single-branch common
+          git clone --depth=1 https://github.com/aosp-mirror/kernel_common -b deprecated/android12-5.10-2022-01 --single-branch common
           echo "修复完毕" && ls
           
       - name: Build kernel
