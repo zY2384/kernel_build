@@ -22,17 +22,8 @@ jobs:
       - name: Pull toolchain
         run: |
           sudo apt-get update -y
-          sudo apt install python3
-          if [[ -f /usr/bin/python ]];then
-            echo "Python：/usr/bin/python"
-          else
-            sudo ln -s /usr/bin/python3 /usr/bin/python
-          fi
-          if [[ -f /usr/bin/python2 ]];then
-            echo "Python：/usr/bin/python2"
-          else
-            sudo ln -s /usr/bin/python3 /usr/bin/python2
-          fi
+          sudo apt install python2
+          
           
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 aarch64-linux-android-4.9
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 arm-linux-androideabi-4.9
