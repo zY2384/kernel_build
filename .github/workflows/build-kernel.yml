@@ -22,7 +22,7 @@ jobs:
       - name: Pull toolchain
         run: |
           sudo apt-get update -y
-          ls /usr/bin/
+          sudo apt install python3
           if [[ -f /usr/bin/python ]];then
             echo "Python：/usr/bin/python"
           else
