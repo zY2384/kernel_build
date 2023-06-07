@@ -1,4 +1,4 @@
-name: Android_gki_kernel_build
+name: Build MikaKernel
 
 
 on:
@@ -14,50 +14,55 @@ jobs:
         run: |
           echo "ANYKERNEL_SOURCE=$(cat config.env | grep -w "ANYKERNEL_SOURCE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
           echo "ANYKERNEL_SOURCE_BRANCH=$(cat config.env | grep -w "ANYKERNEL_SOURCE_BRANCH" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
-          sudo apt-get update -y
-          sudo apt-get install -y ccache lzop cpio bzip2 zip flex bison gperf
-          
-      - name: Pull toolchain and kernel
+          echo "KERNEL_SOURCE=$(cat config.env | grep -w "KERNEL_SOURCE" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
+          echo "KERNEL_SOURCE_BRANCH=$(cat config.env | grep -w "KERNEL_SOURCE_BRANCH" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
+          echo "KERNEL_TARGET=$(cat config.env | grep -w "KERNEL_TARGET" | head -n 1 | cut -d "=" -f 2)" >> $GITHUB_ENV
+          echo "BUILD_ARGS=$(cat config.env | grep -w "BUILD_ARGS" | head -n 1 | cut -d ":" -f 2)" >> $GITHUB_ENV
+
+      - name: Pull toolchain
         run: |
-          mkdir android-kernel && cd android-kernel
-          curl https://storage.googleapis.com/git-repo-downloads/repo > repo && chmod +x ./repo
-          ./repo init -u https://android.googlesource.com/kernel/manifest -b common-android12-5.10-2023-04
-          ./repo sync -c -j$(($(getconf _NPROCESSORS_ONLN) * 2))
-          echo "检查代码完整性"
-          ./repo sync && ls
-          echo "5.10.168更换为5.10.66"
-          rm -rf common
-          git clone --depth=1 https://github.com/aosp-mirror/kernel_common -b deprecated/android12-5.10-2022-01 --single-branch common
-          echo "修复完毕" && ls
-          
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 aarch64-linux-android-4.9
+          git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_arm_arm-linux-androideabi-4.9 arm-linux-androideabi-4.9
+          mkdir clang && curl https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/android12-release/clang-r416183b1.tar.gz -RLO && tar -C clang/ -xf clang-*.tar.gz
+
+      - name: Pull kernel source
+        run: |
+          git clone --depth=1 ${{ env.KERNEL_SOURCE }} -b ${{ env.KERNEL_SOURCE_BRANCH }} kernel-source
+          echo "KERNEL_VERSION="$(cat kernel-source/arch/arm64/configs/${{ env.KERNEL_TARGET }}_defconfig | grep "CONFIG_LOCALVERSION\=" | sed -r 's/.*"(.+)".*/\1/' | sed 's/^.//')"" >> $GITHUB_ENV
+
       - name: Build kernel
         run: |
-          echo "开始构建内核" 
-          cd android-kernel && ls
-          if [[ -f build/build.sh ]];then
-            LTO=thin BUILD_CONFIG=common/build.config.gki.aarch64 build/build.sh -j$(($(getconf _NPROCESSORS_ONLN) * 2))
-          fi
-          
+          export KBUILD_BUILD_USER="zclkkk"
+          export KBUILD_BUILD_HOST="workspace"
+          export PATH=$GITHUB_WORKSPACE/clang/bin:${PATH}
+          args="                  ARCH=arm64 \
+                                  O=../out \
+                                  ${{ env.BUILD_ARGS }} \
+                                  CLANG_TRIPLE=aarch64-linux-gnu- \
+                                  CROSS_COMPILE=$GITHUB_WORKSPACE/aarch64-linux-android-4.9/bin/aarch64-linux-android- \
+                                  CROSS_COMPILE_ARM32=$GITHUB_WORKSPACE/arm-linux-androideabi-4.9/bin/arm-linux-androideabi- "
+          cd kernel-source
+          make ${args} ${{ env.KERNEL_TARGET }}_defconfig
+          make -j$(($(getconf _NPROCESSORS_ONLN) * 2)) ${args}
+
       - name: Package kernel
         run: |
           git clone --depth=1 ${{ env.ANYKERNEL_SOURCE }} -b ${{ env.ANYKERNEL_SOURCE_BRANCH }} AnyKernel3 && rm -rf AnyKernel3/.git AnyKernel3/.github AnyKernel3/LICENSE AnyKernel3/README.md
-          if [[ -f android-kernel/out/android12-5.10/common/arch/arm64/boot/Image.gz-dtb ]]; then
-            echo "压缩格式：Image.gz-dtb" && cp android-kernel/out/android12-5.10/common/arch/arm64/boot/Image.gz-dtb AnyKernel3/Image.gz-dtb
-          elif [[ -f android-kernel/out/android12-5.10/common/arch/arm64/boot/Image-dtb ]]; then
-            echo "压缩格式：Image-dtb" && cp android-kernel/out/android12-5.10/common/arch/arm64/boot/Image-dtb AnyKernel3/Image-dtb
-          elif [[ -f android-kernel/out/android12-5.10/common/arch/arm64/boot/Image.gz ]]; then
-            echo "压缩格式：Image.gz" && cp android-kernel/out/android12-5.10/common/arch/arm64/boot/Image.gz AnyKernel3/Image.gz
-          elif [[ -f android-kernel/out/android12-5.10/common/arch/arm64/boot/Image ]]; then
-            echo "压缩格式：Image" && cp android-kernel/out/android12-5.10/common/arch/arm64/boot/Image AnyKernel3/Image
+          if [[ -f out/arch/arm64/boot/Image.gz-dtb ]]; then
+            cp out/arch/arm64/boot/Image.gz-dtb AnyKernel3/Image.gz-dtb
+          elif [[ -f out/arch/arm64/boot/Image-dtb ]]; then
+            cp out/arch/arm64/boot/Image-dtb AnyKernel3/Image-dtb
+          elif [[ -f out/arch/arm64/boot/Image.gz ]]; then
+            cp out/arch/arm64/boot/Image.gz AnyKernel3/Image.gz
+          elif [[ -f out/arch/arm64/boot/Image ]]; then
+            cp out/arch/arm64/boot/Image AnyKernel3/Image
           fi
-          if [ -f android-kernel/out/android12-5.10/common/arch/arm64/boot/dtbo.img ]; then
-            cp android-kernel/out/android12-5.10/common/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
+          if [ -f out/arch/arm64/boot/dtbo.img ]; then
+            cp out/arch/arm64/boot/dtbo.img AnyKernel3/dtbo.img
           fi
-          rm -rf android-kernel/
-          ls
 
       - name: Upload kernel to artifact
         uses: actions/upload-artifact@v3
         with:
-          name: gki-android12-5.10-test
+          name: ${{ env.KERNEL_VERSION }}_${{ env.KERNEL_TARGET }}
           path: AnyKernel3/*
