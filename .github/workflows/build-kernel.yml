@@ -26,12 +26,12 @@ jobs:
           if [[ -f /usr/bin/python ]];then
             echo "Python：/usr/bin/python"
           else
-            ln -s /usr/bin/python3 /usr/bin/python
+            sudo ln -s /usr/bin/python3 /usr/bin/python
           fi
           if [[ -f /usr/bin/python2 ]];then
             echo "Python：/usr/bin/python2"
           else
-            ln -s /usr/bin/python3 /usr/bin/python2
+            sudo ln -s /usr/bin/python3 /usr/bin/python2
           fi
           
           git clone --depth=1 https://github.com/LineageOS/android_prebuilts_gcc_linux-x86_aarch64_aarch64-linux-android-4.9 aarch64-linux-android-4.9
